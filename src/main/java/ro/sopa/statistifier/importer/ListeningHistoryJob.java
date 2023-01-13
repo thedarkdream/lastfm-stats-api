@@ -39,7 +39,7 @@ public class ListeningHistoryJob {
 
         boolean shouldContinue = true;
 
-        String apiKey = "ca959cbe2c1f179ccce738c66e3d12df";
+        String apiKey = System.getenv("API_KEY");
 
         logger.info("Fetching the first page...");
         ListeningHistory page = lastFMClient.callRecentTracks(apiKey, username, startPage);
