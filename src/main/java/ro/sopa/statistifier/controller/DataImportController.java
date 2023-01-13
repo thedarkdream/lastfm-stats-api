@@ -7,24 +7,16 @@ import org.springframework.web.bind.annotation.*;
 import ro.sopa.statistifier.importer.ListeningHistoryJob;
 
 @RestController
-public class ListeningHistoryController {
+public class DataImportController {
 
-    private static final Logger logger = LoggerFactory.getLogger(ListeningHistoryController.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataImportController.class);
 
     @Autowired
     private ListeningHistoryJob listeningHistoryJob;
 
-    @PostMapping("/download/{username}")
-    public void downloadListeningHistoryOfUser(@PathVariable String username, @RequestParam Integer startPage) {
-
+    @PostMapping("/import/{username}")
+    public void downloadListeningHistoryOfUser(@PathVariable String username, @RequestParam(required = false) Integer startPage) {
         listeningHistoryJob.downloadAndPersistHistory(username, startPage != null ? startPage : 1);
-
     }
 
-    @PostMapping("/test")
-    public void test() {
-
-        logger.info("Debugged");
-
-    }
 }

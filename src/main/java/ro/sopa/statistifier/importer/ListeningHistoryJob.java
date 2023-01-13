@@ -1,24 +1,18 @@
 package ro.sopa.statistifier.importer;
 
-import ch.qos.logback.classic.net.LoggingEventPreSerializationTransformer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Component;
 import ro.sopa.statistifier.api.client.LastFMClient;
 import ro.sopa.statistifier.api.model.ListeningHistory;
-import ro.sopa.statistifier.api.model.Recenttracks;
 import ro.sopa.statistifier.api.model.Track;
 import ro.sopa.statistifier.db.model.TrackListen;
 import ro.sopa.statistifier.db.repository.TrackListenRepository;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -41,11 +35,15 @@ public class ListeningHistoryJob {
 
     public void downloadAndPersistHistory(String username, Integer startPage) {
 
+        LocalDateTime dateOfLastListen = trackListenRepository.findLatestListenDate(username);
+
+        boolean shouldContinue = true;
+
         String apiKey = "ca959cbe2c1f179ccce738c66e3d12df";
 
         logger.info("Fetching the first page...");
         ListeningHistory page = lastFMClient.callRecentTracks(apiKey, username, startPage);
-        persist(page, username);
+        shouldContinue = persist(page, username, dateOfLastListen);
 
         String nrPagesStr = page.getRecenttracks().getAttr().getTotalPages();
         Integer nrPages = Integer.parseInt(nrPagesStr);
@@ -53,20 +51,28 @@ public class ListeningHistoryJob {
         // crashed @ 414
         //  Data truncation: Incorrect datetime value: '2015-03-29T03:56:00' for column 'date' at row 1
         for(int i = startPage + 1; i <= nrPages; i++) {
+            if(!shouldContinue) {
+                logger.info("Stopped because scrobbles are up to date.");
+                break;
+            }
             logger.info("Fetching page " + i + " of " + nrPages + "...");
             page = lastFMClient.callRecentTracks(apiKey, username, i);
-            persist(page, username);
+            shouldContinue = persist(page, username, dateOfLastListen);
             entityManager.clear();
         }
 
         logger.info("Finished!");
     }
 
-    private void persist(ListeningHistory page, String username) {
+    private boolean persist(ListeningHistory page, String username, LocalDateTime dateOfLastListen) {
         for(int i = 0; i < page.getRecenttracks().getTrack().size(); i++) {
             Track t = page.getRecenttracks().getTrack().get(i);
+
             try {
-                persist(t, username);
+                boolean shouldContinue = persist(t, username, dateOfLastListen);
+                if(!shouldContinue) {
+                    return false;
+                }
             } catch(Throwable thr) {
                 logger.error("Error while persisting track on page " + page.getRecenttracks().getAttr().getPage() + " with index = " + i);
                 try {
@@ -76,13 +82,21 @@ public class ListeningHistoryJob {
                 }
             }
         }
+
+        return true;
     }
 
-    private void persist(Track track, String username) {
+    private boolean persist(Track track, String username, LocalDateTime dateOfLastListen) {
 
         TrackListen listen = mapTrack(track, username);
+
+        if(listen.getDate().equals(dateOfLastListen)) {
+            return false;
+        }
+
         trackListenRepository.save(listen);
 
+        return true;
     }
 
     private TrackListen mapTrack(Track track, String username) {
@@ -99,9 +113,8 @@ public class ListeningHistoryJob {
         return listen;
     }
 
-    private static String mapDate(String date) {
-        LocalDateTime localDateTime = LocalDateTime.parse(date.replace("Sep", "Sept"), DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm"));
-        return localDateTime.format(DATE_FORMATTER);
+    private static LocalDateTime mapDate(String date) {
+        return LocalDateTime.parse(date.replace("Sep", "Sept"), DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm"));
     }
 
 }

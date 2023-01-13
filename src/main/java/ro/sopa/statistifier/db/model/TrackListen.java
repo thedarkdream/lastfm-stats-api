@@ -1,11 +1,12 @@
 package ro.sopa.statistifier.db.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 
-@Entity(name = "track_listen")
+import java.time.LocalDateTime;
+import java.util.Date;
+
+@Entity
+@Table(name = "track_listen")
 public class TrackListen {
 
     private Long id;
@@ -16,7 +17,7 @@ public class TrackListen {
     private String track;
     private String artistId;
     private String albumId;
-    private String date;
+    private LocalDateTime date;
 
     public void setId(Long id) {
         this.id = id;
@@ -76,11 +77,11 @@ public class TrackListen {
         this.albumId = albumId;
     }
 
-    public String getDate() {
+    public LocalDateTime getDate() {
         return date;
     }
 
-    public void setDate(String date) {
+    public void setDate(LocalDateTime date) {
         this.date = date;
     }
 }
