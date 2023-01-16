@@ -13,14 +13,14 @@ import ro.sopa.statistifier.api.model.Track;
 import ro.sopa.statistifier.db.model.TrackListen;
 import ro.sopa.statistifier.db.repository.TrackListenRepository;
 
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
 public class ListeningHistoryJob {
 
     private static final Logger logger = LoggerFactory.getLogger(ListeningHistoryJob.class);
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Autowired
     LastFMClient lastFMClient;
@@ -35,7 +35,7 @@ public class ListeningHistoryJob {
 
     public void downloadAndPersistHistory(String username, Integer startPage) {
 
-        LocalDateTime dateOfLastListen = trackListenRepository.findLatestListenDate(username);
+        ZonedDateTime dateOfLastListen = trackListenRepository.findLatestListenDate(username);
 
         boolean shouldContinue = true;
 
@@ -64,7 +64,7 @@ public class ListeningHistoryJob {
         logger.info("Finished!");
     }
 
-    private boolean persist(ListeningHistory page, String username, LocalDateTime dateOfLastListen) {
+    private boolean persist(ListeningHistory page, String username, ZonedDateTime dateOfLastListen) {
         for(int i = 0; i < page.getRecenttracks().getTrack().size(); i++) {
             Track t = page.getRecenttracks().getTrack().get(i);
 
@@ -86,7 +86,7 @@ public class ListeningHistoryJob {
         return true;
     }
 
-    private boolean persist(Track track, String username, LocalDateTime dateOfLastListen) {
+    private boolean persist(Track track, String username, ZonedDateTime dateOfLastListen) {
 
         TrackListen listen = mapTrack(track, username);
 
@@ -113,8 +113,8 @@ public class ListeningHistoryJob {
         return listen;
     }
 
-    private static LocalDateTime mapDate(String date) {
-        return LocalDateTime.parse(date.replace("Sep", "Sept"), DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm"));
+    private static ZonedDateTime mapDate(String date) {
+        return ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm").withZone(ZoneId.of("UTC")));
     }
 
 }

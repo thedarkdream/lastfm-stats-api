@@ -2,8 +2,7 @@ package ro.sopa.statistifier.db.model;
 
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
-import java.util.Date;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "track_listen")
@@ -17,7 +16,7 @@ public class TrackListen {
     private String track;
     private String artistId;
     private String albumId;
-    private LocalDateTime date;
+    private ZonedDateTime date;
 
     public void setId(Long id) {
         this.id = id;
@@ -77,11 +76,11 @@ public class TrackListen {
         this.albumId = albumId;
     }
 
-    public LocalDateTime getDate() {
+    public ZonedDateTime getDate() {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
+    public void setDate(ZonedDateTime date) {
         this.date = date;
     }
 }
