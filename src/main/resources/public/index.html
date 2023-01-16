@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Last.FM graphs</title>
+    </head>
+
+<body>
+
+    <!-- load the vue -->
+    <script type="importmap">
+      {
+        "imports": {
+          "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js",
+          "axios": "https://unpkg.com/axios@1.1.2/dist/esm/axios.min.js"
+        }
+      }
+    </script>
+
+    <!-- load chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!--    <script src="https://unpkg.com/axios@1.1.2/dist/axios.min.js"></script>-->
+    <script src=""></script>
+
+    <!-- container for the vue app -->
+    <div id="app">
+        Hello {{username}}!
+        Username: <input type="text" v-model="username" />
+        Fetch: <button @click="fetchTopArtists">Fetch top artists!</button>
+        <TopArtists :artists="top20Artists"> </TopArtists>
+        <Chart :labels="labels" :data="data"> </Chart>
+
+        <b-tabs content-class="mt-3">
+            <b-tab title="First" active><p>I'm the first tab</p></b-tab>
+            <b-tab title="Second"><p>I'm the second tab</p></b-tab>
+            <b-tab title="Disabled" disabled><p>I'm a disabled tab!</p></b-tab>
+        </b-tabs>
+    </div>
+
+    <!-- run the vue app -->
+    <script type="module">
+      import { createApp } from 'vue'
+      import topArtists from './topArtists.js'
+      import chart from './chart.js'
+      import axios from 'axios'
+
+      const app = createApp({
+        data() {
+          return {
+            username: 'thedarkdream',
+            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            data: [{
+                label: 'Viezuri',
+                data: [12, 19, 3, 5, 2, 3]
+              }, {
+                label: 'Căpcăuni',
+                data: [5, 15, 4, 3, 2, 7]
+              }],
+            top20Artists: [
+                { name: 'Gigi', listens: 15 },
+                { name: 'Bobi', listens: 12 }
+            ]
+          }
+        },
+        methods: {
+          fetchTopArtists() {
+            var vm = this;
+            axios.get('http://localhost:8080/' + this.username + '/artists')
+            .then(function (response) {
+              console.log(response);
+              vm.top20Artists = response.data.artists;
+            });
+          }
+        }
+      });
+
+      app.component('topartists', topArtists)
+         .component('chart', chart);
+
+      app.mount('#app');
+
+    </script>
+
+</body>
+</html>

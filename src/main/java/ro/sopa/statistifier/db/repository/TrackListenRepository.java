@@ -14,6 +14,10 @@ public interface TrackListenRepository extends JpaRepository<TrackListen, Long> 
     @Query("select max(t.date) from TrackListen t where t.username=:username")
     LocalDateTime findLatestListenDate(@Param("username") String username);
 
-    @Query("select t.artist, count(1) from TrackListen t group by t.artist")
-    List<Object[]> findTopArtists(String username, int number);
+    @Query(value = "select t.artist, count(1) as c from Track_Listen t where t.username = :username group by t.artist order by c desc limit :number", nativeQuery = true)
+    List<Object[]> findTopArtists(@Param("username") String username, @Param("number") Integer number);
+
+    @Query("select t.date from TrackListen t where t.username = :username and artist = :artist and date >= :minDate and date <= :maxDate")
+    List<LocalDateTime> findListenDates(@Param("username") String username, @Param("artist") String artist, @Param("minDate")  LocalDateTime minDate, @Param("maxDate") LocalDateTime maxDate);
+
 }

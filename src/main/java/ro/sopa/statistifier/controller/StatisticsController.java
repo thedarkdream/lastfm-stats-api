@@ -21,12 +21,17 @@ public class StatisticsController {
     private TrackListenService trackListenService;
 
     @GetMapping("/{username}/artists")
-    public TopArtists artists(@PathVariable String username) {
-        List<ArtistListens> artistListens = trackListenService.findTopArtists(username, 30);
+    public TopArtists artists(@PathVariable String username, @RequestParam(required = false) Integer number) {
+        List<ArtistListens> artistListens = trackListenService.findTopArtists(username, number == null ? 20 : number);
 
         TopArtists ta = new TopArtists();
         ta.setArtists(artistListens.stream().map(this::toArtist).collect(Collectors.toList()));
         return ta;
+    }
+
+    @GetMapping("/{username}/artists/timeline")
+    public ArtistTimeline artistTimeline(@PathVariable String username) {
+
     }
 
     private ArtistListensObj toArtist(ArtistListens artistListens) {
