@@ -4,13 +4,13 @@ import java.util.List;
 
 public class ArtistsTimeline {
 
-    private List<ArtistListensObj> artists;
+    private List<ArtistTimeline> artistTimelines;
 
-    public List<ArtistListensObj> getArtists() {
-        return artists;
+    public List<ArtistTimeline> getArtistTimelines() {
+        return artistTimelines;
     }
 
-    public void setArtists(List<ArtistListensObj> artists) {
-        this.artists = artists;
+    public void setArtistTimelines(List<ArtistTimeline> artistTimelines) {
+        this.artistTimelines = artistTimelines;
     }
 }

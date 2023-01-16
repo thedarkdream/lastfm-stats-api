@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ro.sopa.statistifier.service.TrackListenService;
 import ro.sopa.statistifier.service.dto.ArtistListens;
 import ro.sopa.statistifier.web.model.ArtistListensObj;
+import ro.sopa.statistifier.web.model.ArtistsTimeline;
 import ro.sopa.statistifier.web.model.TopArtists;
 
 import java.util.List;
@@ -30,8 +31,10 @@ public class StatisticsController {
     }
 
     @GetMapping("/{username}/artists/timeline")
-    public ArtistTimeline artistTimeline(@PathVariable String username) {
+    public ArtistsTimeline artistTimeline(@PathVariable String username) {
+        ArtistsTimeline artistsTimeline = new ArtistsTimeline();
 
+        return artistsTimeline;
     }
 
     private ArtistListensObj toArtist(ArtistListens artistListens) {
