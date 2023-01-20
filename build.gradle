@@ -20,9 +20,15 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
 
     runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
+    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc'
 
     runtimeOnly 'org.postgresql:postgresql'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+bootJar {
+    archiveBaseName = 'lastfm-stats'
+    archiveVersion =  '0.1.0'
 }
 
 tasks.named('test') {

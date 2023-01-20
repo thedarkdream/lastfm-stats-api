@@ -37,3 +37,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+### private shit
+src/main/resources/azure-hardcoded.properties
+kuber/

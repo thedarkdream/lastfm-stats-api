@@ -6,16 +6,23 @@ import jakarta.persistence.EntityManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import ro.sopa.statistifier.UserImportException;
 import ro.sopa.statistifier.api.client.LastFMClient;
 import ro.sopa.statistifier.api.model.ListeningHistory;
 import ro.sopa.statistifier.api.model.Track;
 import ro.sopa.statistifier.db.model.TrackListen;
 import ro.sopa.statistifier.db.repository.TrackListenRepository;
+import ro.sopa.statistifier.job.JobDescriptor;
+import ro.sopa.statistifier.job.JobRegistry;
+import ro.sopa.statistifier.job.JobType;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 @Component
 public class ListeningHistoryJob {
@@ -25,28 +32,36 @@ public class ListeningHistoryJob {
     @Autowired
     LastFMClient lastFMClient;
 
+    @Value("${lastfm.api.key}")
+    private String apiKey;
+
     @Autowired
     TrackListenRepository trackListenRepository;
 
     @Autowired
     EntityManager entityManager;
 
+    @Autowired
+    JobRegistry jobRegistry;
+
     ObjectMapper objectMapper = new ObjectMapper();
 
-    public void downloadAndPersistHistory(String username, Integer startPage) {
+    public void downloadAndPersistHistory(String username, Integer startPage, JobDescriptor jobDescriptor) {
 
         ZonedDateTime dateOfLastListen = trackListenRepository.findLatestListenDate(username);
 
         boolean shouldContinue = true;
 
-        String apiKey = System.getenv("API_KEY");
+        jobRegistry.setStep(jobDescriptor, startPage);
 
-        logger.info("Fetching the first page...");
+        logger.info("Fetching page " + startPage + "...");
         ListeningHistory page = lastFMClient.callRecentTracks(apiKey, username, startPage);
         shouldContinue = persist(page, username, dateOfLastListen);
 
         String nrPagesStr = page.getRecenttracks().getAttr().getTotalPages();
         Integer nrPages = Integer.parseInt(nrPagesStr);
+
+        jobRegistry.setTotalStep(jobDescriptor, nrPages);
 
         // crashed @ 414
         //  Data truncation: Incorrect datetime value: '2015-03-29T03:56:00' for column 'date' at row 1
@@ -55,6 +70,9 @@ public class ListeningHistoryJob {
                 logger.info("Stopped because scrobbles are up to date.");
                 break;
             }
+
+            jobRegistry.setStep(jobDescriptor, i);
+
             logger.info("Fetching page " + i + " of " + nrPages + "...");
             page = lastFMClient.callRecentTracks(apiKey, username, i);
             shouldContinue = persist(page, username, dateOfLastListen);
@@ -78,7 +96,7 @@ public class ListeningHistoryJob {
                 try {
                     logger.error(objectMapper.writeValueAsString(t));
                 } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                    throw new UserImportException("Error while persisting listen history", e);
                 }
             }
         }
@@ -114,7 +132,7 @@ public class ListeningHistoryJob {
     }
 
     private static ZonedDateTime mapDate(String date) {
-        return ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm").withZone(ZoneId.of("UTC")));
+        return ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm").withZone(ZoneId.of("UTC")).withLocale(Locale.US));
     }
 
 }

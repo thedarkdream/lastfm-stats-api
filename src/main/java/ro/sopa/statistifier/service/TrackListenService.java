@@ -22,7 +22,7 @@ public class TrackListenService {
     }
 
     private ArtistListens toListens(Object[] objects) {
-        return new ArtistListens((String) objects[0], ((Long) objects[1]).intValue());
+        return new ArtistListens((String) objects[0], ((Number) objects[1]).intValue());
     }
 
 }

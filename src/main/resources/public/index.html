@@ -64,7 +64,7 @@
         methods: {
           fetchTopArtists() {
             var vm = this;
-            axios.get('http://localhost:8080/' + this.username + '/artists')
+            axios.get(this.username + '/artists')
             .then(function (response) {
               console.log(response);
               vm.top20Artists = response.data.artists;
