@@ -132,7 +132,7 @@ public class ListeningHistoryJob {
     }
 
     private static ZonedDateTime mapDate(String date) {
-        return ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("dd MMM yyyy, kk:mm").withZone(ZoneId.of("UTC")).withLocale(Locale.US));
+        return ZonedDateTime.parse(date, DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm").withZone(ZoneId.of("UTC")).withLocale(Locale.US));
     }
 
 }

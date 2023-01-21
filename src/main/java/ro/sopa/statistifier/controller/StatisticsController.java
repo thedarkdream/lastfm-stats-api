@@ -10,6 +10,8 @@ import ro.sopa.statistifier.service.model.ArtistTimelineEntry;
 import ro.sopa.statistifier.service.model.ArtistTimelinePoint;
 import ro.sopa.statistifier.web.model.*;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,10 +33,18 @@ public class StatisticsController {
     }
 
     @GetMapping("/{username}/artists/timeline")
-    public ArtistsTimeline artistTimeline(@PathVariable String username) {
+    public ArtistsTimeline artistTimeline(@PathVariable String username,
+                                          @RequestParam(required = false) String dateFrom,
+                                          @RequestParam(required = false) String dateTo,
+                                          @RequestParam(required = false) Integer nrSteps,
+                                          @RequestParam(required = false) Integer nrArtists) {
+
         ArtistsTimeline artistsTimeline = new ArtistsTimeline();
 
-        List<ArtistTimelineEntry> entries = trackListenService.findArtistsTimeline(username, null, null, 30, 10);
+        ZonedDateTime startDate = dateFrom != null ? ZonedDateTime.parse(dateFrom, DateTimeFormatter.ISO_DATE) : null;
+        ZonedDateTime endDate = dateFrom != null ? ZonedDateTime.parse(dateTo, DateTimeFormatter.ISO_DATE) : null;
+
+        List<ArtistTimelineEntry> entries = trackListenService.findArtistsTimeline(username, startDate, endDate, nrSteps != null ? nrSteps : 30, nrArtists != null ? nrArtists : 10);
 
         entries.stream().forEach(e -> artistsTimeline.getArtistTimelines().add(mapTimeline(e)));
 

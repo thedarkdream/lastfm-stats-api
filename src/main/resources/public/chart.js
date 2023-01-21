@@ -1,26 +1,7 @@
-var createDataItem = function(o) {
-    return {
-        label: o.artist,
-        data: o.points,
-        borderWidth: 3,
-        tension: 0.3
-    }
-};
-
 export default {
   data() {
-    return {
-      chart: null
-    }
+    this.chart = null;
   },
-//    props: {
-//        labels: Array,
-//        data: Array,
-//        chartId: {
-//            type: String,
-//            default: "myChart"
-//        }
-//    },
     props: {
         timeline: Object,
         chartId: {
@@ -29,7 +10,7 @@ export default {
         }
     },
     template: `
-        <canvas :id="chartId"></canvas>
+        <canvas :id="chartId" class="canvasClass"></canvas>
     `,
     methods: {
         render() {
@@ -55,8 +36,18 @@ export default {
     },
     watch: {
         timeline: function(oldVal, newVal) {
-        this.chart.destroy();
-         this.render();
+            this.chart.data.labels = this.timeline.labels;
+            this.chart.data.datasets = this.timeline.points.map((o) => createDataItem(o));
+            this.chart.update();
         }
     }
 }
+
+var createDataItem = function(o) {
+    return {
+        label: o.artist,
+        data: o.points,
+        borderWidth: 3,
+        tension: 0.3
+    }
+};

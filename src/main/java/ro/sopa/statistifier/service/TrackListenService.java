@@ -2,6 +2,7 @@ package ro.sopa.statistifier.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
 import ro.sopa.statistifier.db.repository.TrackListenRepository;
 import ro.sopa.statistifier.service.dto.ArtistListens;
@@ -27,7 +28,7 @@ public class TrackListenService {
     @Value("${dbType}")
     private String dbType;
 
-    private static DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE;
+    private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
     public List<ArtistListens> findTopArtists(String username, int number) {
         List<Object[]> artistsAndCounts = trackListenRepository.findTopArtists(username, number, dbType);
