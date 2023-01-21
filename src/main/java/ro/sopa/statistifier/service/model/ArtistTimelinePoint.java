@@ -1,11 +1,11 @@
-package ro.sopa.statistifier.web.model;
+package ro.sopa.statistifier.service.model;
 
-public class TimelinePoint {
+public class ArtistTimelinePoint {
 
     private String time;
-    private Long listens;
+    private long listens;
 
-    public TimelinePoint(String time, Long listens) {
+    public ArtistTimelinePoint(String time, long listens) {
         this.time = time;
         this.listens = listens;
     }
@@ -18,11 +18,11 @@ public class TimelinePoint {
         this.time = time;
     }
 
-    public Long getListens() {
+    public long getListens() {
         return listens;
     }
 
-    public void setListens(Long listens) {
+    public void setListens(long listens) {
         this.listens = listens;
     }
 }
