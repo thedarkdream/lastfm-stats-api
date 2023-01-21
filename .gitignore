@@ -39,5 +39,5 @@ build/
 !**/src/test/**/build/
 
 ### private shit
-src/main/resources/azure-hardcoded.properties
+src/main/resources/application-azure-hardcoded.properties
 kuber/
