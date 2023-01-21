@@ -34,7 +34,7 @@ public class StatisticsController {
     public ArtistsTimeline artistTimeline(@PathVariable String username) {
         ArtistsTimeline artistsTimeline = new ArtistsTimeline();
 
-        List<ArtistTimelineEntry> entries = trackListenService.findArtistsTimeline(username, null, null, 100);
+        List<ArtistTimelineEntry> entries = trackListenService.findArtistsTimeline(username, null, null, 30, 10);
 
         entries.stream().forEach(e -> artistsTimeline.getArtistTimelines().add(mapTimeline(e)));
 

@@ -35,7 +35,7 @@ public class TrackListenService {
         return artistsAndCounts.stream().map(this::toListens).collect(Collectors.toList());
     }
 
-    public List<ArtistTimelineEntry> findArtistsTimeline(String username, ZonedDateTime from, ZonedDateTime to, int nrSteps) {
+    public List<ArtistTimelineEntry> findArtistsTimeline(String username, ZonedDateTime from, ZonedDateTime to, int nrSteps, int nrArtists) {
 
         if(to == null) {
             to = ZonedDateTime.now();
@@ -46,7 +46,7 @@ public class TrackListenService {
         }
 
         // așe pe scurt
-        List<String> artists = trackListenRepository.findTopArtists(username, 20, dbType).stream().map(o -> (String) o[0]).collect(Collectors.toList());
+        List<String> artists = trackListenRepository.findTopArtists(username, nrArtists, dbType).stream().map(o -> (String) o[0]).collect(Collectors.toList());
 
         ZoneId zoneId = from.getZone();
 
