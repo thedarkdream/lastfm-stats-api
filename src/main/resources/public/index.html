@@ -19,7 +19,6 @@
 
     <!-- load chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<!--    <script src="https://unpkg.com/axios@1.1.2/dist/axios.min.js"></script>-->
     <script src=""></script>
 
     <!-- container for the vue app -->
@@ -100,8 +99,6 @@
             .then(function (response) {
                 var newTimeline = buildTimeline(response.data.artistTimelines);
                 vm.listenTimeline = newTimeline;
-                //vm.listenTimeline.labels = newTimeline.labels ;
-                //vm.listenTimeline.points = newTimeline.points ;
             });
           }
         }

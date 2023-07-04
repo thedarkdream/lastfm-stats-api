@@ -6,7 +6,7 @@
 
 #app {
     width: 100%;
-    height: 800px;
+    display: flex;
 }
 
 .theForm {
@@ -22,11 +22,6 @@
 }
 
 .listenTimeline {
-    width: 100%;
-    height: 100%;
-}
-
-.canvasClass {
     width: 100%;
     height: 100%;
 }

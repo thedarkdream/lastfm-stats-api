@@ -10,7 +10,7 @@ export default {
         }
     },
     template: `
-        <canvas :id="chartId" class="canvasClass"></canvas>
+        <canvas :id="chartId"></canvas>
     `,
     methods: {
         render() {
@@ -22,6 +22,7 @@ export default {
                   datasets: this.timeline.points.map((o) => createDataItem(o))
                 },
                 options: {
+                  responsive: true,
                   scales: {
                     y: {
                       beginAtZero: true
