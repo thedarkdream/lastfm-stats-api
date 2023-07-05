@@ -1,36 +1,48 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.0.1'
-    id 'io.spring.dependency-management' version '1.1.0'
+	id 'org.springframework.boot' version '3.1.1'
+	id 'io.spring.dependency-management' version '1.1.0'
+	id 'org.jetbrains.kotlin.jvm' version '1.8.22'
+	id 'org.jetbrains.kotlin.plugin.spring' version '1.8.22'
 }
 
-group = 'ro.sopa'
+group = 'ro.sopa.lastfm'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
+
+java {
+	sourceCompatibility = '17'
+}
 
 repositories {
-    mavenCentral()
+	mavenCentral()
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.jetbrains.kotlin:kotlin-reflect'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
+	implementation 'com.google.code.gson:gson:2.9.0'
 
-    runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
-    runtimeOnly group: 'com.microsoft.sqlserver', name: 'mssql-jdbc'
+	runtimeOnly group: 'mysql', name: 'mysql-connector-java', version: '5.1.6'
 
-    runtimeOnly 'org.postgresql:postgresql'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.withType(KotlinCompile) {
+	kotlinOptions {
+		freeCompilerArgs += '-Xjsr305=strict'
+		jvmTarget = '17'
+	}
 }
 
 bootJar {
-    archiveBaseName = 'lastfm-stats'
-    archiveVersion =  '0.1.0'
+	archiveBaseName = 'lastfm-stats-api'
+	archiveVersion =  '0.1.0'
 }
 
 tasks.named('test') {
-    useJUnitPlatform()
+	useJUnitPlatform()
 }
