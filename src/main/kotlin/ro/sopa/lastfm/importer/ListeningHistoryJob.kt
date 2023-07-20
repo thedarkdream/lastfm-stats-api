@@ -9,8 +9,14 @@ import org.springframework.stereotype.Component
 import ro.sopa.lastfm.api.client.LastFMClient
 import ro.sopa.lastfm.api.model.ListeningHistory
 import ro.sopa.lastfm.api.model.Track
+import ro.sopa.lastfm.db.model.Artist
+import ro.sopa.lastfm.db.model.ArtistAlias
 import ro.sopa.lastfm.db.model.TrackListen
+import ro.sopa.lastfm.db.model.User
+import ro.sopa.lastfm.db.repository.ArtistAliasRepository
+import ro.sopa.lastfm.db.repository.ArtistRepository
 import ro.sopa.lastfm.db.repository.TrackListenRepository
+import ro.sopa.lastfm.db.repository.UserRepository
 import ro.sopa.lastfm.exception.UserImportException
 import ro.sopa.lastfm.job.JobDescriptor
 import ro.sopa.lastfm.job.JobRegistry
@@ -22,28 +28,36 @@ import java.util.*
 @Component
 class ListeningHistoryJob(val lastFMClient: LastFMClient,
                           val trackListenRepository: TrackListenRepository,
+                          val artistRepository: ArtistRepository,
+                          val artistAliasRepository: ArtistAliasRepository,
                           val entityManager: EntityManager,
+                          val userRepository: UserRepository,
                           val jobRegistry: JobRegistry
 ) {
 
     private val logger = LoggerFactory.getLogger(ListeningHistoryJob::class.java)
 
     @Value("\${lastfm.api.key}")
-    private val apiKey: String? = null
+    private lateinit var apiKey: String
 
     private val gson = Gson();
 
     fun downloadAndPersistHistory(username: String, startPage: Int, jobDescriptor: JobDescriptor) {
 
-        val dateOfLastListen: ZonedDateTime? = trackListenRepository.findLatestListenDate(username)
+        var maybeUser = userRepository.findByUsername(username)
+        val user = maybeUser ?: createUser(username)
+
+        val dateOfLastListen: ZonedDateTime? = trackListenRepository.findLatestListenDate(user.id!!)
         var shouldContinue = true
+
+        val userId = getOrCreateUser(username)
 
         jobRegistry.setStep(jobDescriptor, startPage)
 
         logger.info("Fetching page $startPage...")
 
         var page: ListeningHistory = lastFMClient.callRecentTracks(apiKey, username, startPage)
-        shouldContinue = persist(page, username, dateOfLastListen)
+        shouldContinue = persist(page, userId, dateOfLastListen)
         val nrPagesStr: String? = page.recenttracks?.attr?.totalPages
 
         val nrPages = nrPagesStr?.toInt() ?: 1
@@ -57,24 +71,34 @@ class ListeningHistoryJob(val lastFMClient: LastFMClient,
             jobRegistry.setStep(jobDescriptor, i)
             logger.info("Fetching page $i of $nrPages...")
             page = lastFMClient.callRecentTracks(apiKey, username, i)
-            shouldContinue = persist(page, username, dateOfLastListen)
+            shouldContinue = persist(page, userId, dateOfLastListen)
             entityManager.clear()
         }
         logger.info("Finished!")
     }
 
+    private fun getOrCreateUser(username: String): Int {
+        val user = userRepository.findByUsername(username);
+        return user?.id ?: createUser(username).id!!;
+    }
 
-    private fun persist(page: ListeningHistory, username: String, dateOfLastListen: ZonedDateTime?): Boolean {
+    private fun createUser(username: String): User {
+        val user = User(null, username)
+        return userRepository.save(user)
+    }
+
+
+    private fun persist(page: ListeningHistory, userId: Int, dateOfLastListen: ZonedDateTime?): Boolean {
         for (i in 0..page.recenttracks?.track?.size!! - 1) {
             val t: Track = page.recenttracks?.track?.get(i) ?: throw RuntimeException("No tracks returned");
             try {
-                val shouldContinue = persist(t, username, dateOfLastListen)
+                val shouldContinue = persist(t, userId, dateOfLastListen)
                 if (!shouldContinue) {
                     return false
                 }
             } catch (thr: Throwable) {
                 logger.error(
-                    "Error while persisting track on page " + page.recenttracks?.attr?.page + " with index = " + i
+                    "Error while persisting track on page " + page.recenttracks?.attr?.page + " with index = " + i, thr
                 )
                 try {
                     logger.error(gson.toJson(t))
@@ -86,8 +110,8 @@ class ListeningHistoryJob(val lastFMClient: LastFMClient,
         return true
     }
 
-    private fun persist(track: Track, username: String, dateOfLastListen: ZonedDateTime?): Boolean {
-        val listen: TrackListen = mapTrack(track, username)
+    private fun persist(track: Track, userId: Int, dateOfLastListen: ZonedDateTime?): Boolean {
+        val listen: TrackListen = mapTrack(track, userId)
         if (listen.date == dateOfLastListen) {
             return false
         }
@@ -95,13 +119,47 @@ class ListeningHistoryJob(val lastFMClient: LastFMClient,
         return true
     }
 
-    private fun mapTrack(track: Track, username: String): TrackListen {
-        val listen = TrackListen(track = track.name ?: "Unknown", username = username, artist = track.artist?.text ?: "Unknown")
+    private fun mapTrack(track: Track, userId: Int): TrackListen {
+
+        val artistId = findArtist(track);
+
+        val listen = TrackListen(track = track.name ?: "Unknown", userId = userId, artistId = artistId)
         listen.album = track.album?.text
         listen.albumId = track.album?.mbid
-        listen.artistId = track.artist?.mbid
         listen.date = mapDate(track.date?.text!!)
+
         return listen
+    }
+
+    private fun findArtist(track: Track): Int {
+        if(track.artist != null) {
+            var artistId = artistAliasRepository.findArtistIdByAlias(track.artist?.text!!)
+
+            return artistId ?: handleMissingArtistAlias(track);
+        }
+
+        throw RuntimeException("Invalid artist received")
+    }
+
+    private fun handleMissingArtistAlias(track: Track): Int {
+        val corrections = lastFMClient.callCorrections(apiKey, track.artist?.text!!)
+
+        val correctName = corrections.corrections?.correction?.artist?.name!!
+
+        var artist = artistRepository.findByName(correctName) ?: handleMissingArtist(corrections.corrections?.correction?.artist!!)
+
+        return createArtistAlias(artist, track.artist?.text!!);
+    }
+
+    private fun handleMissingArtist(artist: ro.sopa.lastfm.api.model.correction.Artist): Artist {
+        val artistDb = Artist(null, artist.name!!, artist.mbid)
+        return artistRepository.save(artistDb)
+    }
+
+    private fun createArtistAlias(artist: Artist, aliasName: String): Int {
+        val alias = ArtistAlias(null, artist.id!!, aliasName)
+        val persistedAlias = artistAliasRepository.save(alias)
+        return persistedAlias.id!!.toInt()
     }
 
     private fun mapDate(date: String): ZonedDateTime? = ZonedDateTime.parse(date,

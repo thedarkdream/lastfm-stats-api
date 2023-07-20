@@ -13,30 +13,30 @@ import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 @Service
-class TrackListenService(val trackListenRepository: TrackListenRepository) {
+class TrackListenService(val trackListenRepository: TrackListenRepository, val artistService: ArtistService) {
 
     @Value("\${dbType}")
     private lateinit var dbType: String
 
     private val formatter = DateTimeFormatter.ofPattern("dd MMM yyyy")
 
-    fun findTopArtists(username: String, number: Int): List<ArtistListens> {
-        val artistsAndCounts: List<ArtistCountDto> = trackListenRepository.findTopArtists(username, number, dbType)
+    fun findTopArtists(userId: Int, number: Int): List<ArtistListens> {
+        val artistsAndCounts: List<ArtistCountDto> = trackListenRepository.findTopArtists(userId, number, dbType)
         return artistsAndCounts.map { dto -> toListens(dto) }
     }
 
     fun findArtistsTimeline(
-        username: String,
+        userId: Int,
         from: ZonedDateTime?,
         to: ZonedDateTime?,
         nrSteps: Int,
         nrArtists: Int
     ): List<ArtistTimelineEntry> {
 
-        var fromFinal = from ?: trackListenRepository.findOldestListenDate(username) ?: ZonedDateTime.now()
+        var fromFinal = from ?: trackListenRepository.findOldestListenDate(userId) ?: ZonedDateTime.now()
         var toFinal: ZonedDateTime = to ?: ZonedDateTime.now()
 
-        val artists: List<ArtistCountDto> = trackListenRepository.findTopArtists(username, nrArtists, dbType)
+        val artists: List<ArtistCountDto> = trackListenRepository.findTopArtists(userId, nrArtists, dbType, fromFinal, toFinal)
 
         val zoneId = fromFinal.zone
         val fromMilis = fromFinal.toInstant().epochSecond
@@ -45,9 +45,11 @@ class TrackListenService(val trackListenRepository: TrackListenRepository) {
 
         val entries: MutableList<ArtistTimelineEntry> = mutableListOf()
 
+        var artistMap = artistService.findIdToNameMap(artists.map { a -> a.getArtistId() })
+
         for (artist in artists) {
-            val entry = ArtistTimelineEntry(artist.getArtist())
-            val dates = trackListenRepository.findListenDates(username, artist.getArtist(), fromFinal, toFinal)
+            val entry = ArtistTimelineEntry(artistMap[artist.getArtistId()]!!)
+            val dates = trackListenRepository.findListenDates(userId, artist.getArtistId(), fromFinal, toFinal)
 
             // divide the times based on nr of steps
             var currentMilis = fromMilis
@@ -66,6 +68,6 @@ class TrackListenService(val trackListenRepository: TrackListenRepository) {
         return entries
     }
 
-    private fun toListens(dto: ArtistCountDto): ArtistListens = ArtistListens(dto.getArtist(), dto.getCount())
+    private fun toListens(dto: ArtistCountDto): ArtistListens = ArtistListens(dto.getArtistId(), dto.getCount())
 
 }
