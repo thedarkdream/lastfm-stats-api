@@ -26,3 +26,9 @@ create table artist_aliases (
     artist_id int,
     name varchar(256)
 )
+
+create table artist_tags (
+    id int not null auto_increment,
+    artist_id int,
+    tag varchar(256)
+)

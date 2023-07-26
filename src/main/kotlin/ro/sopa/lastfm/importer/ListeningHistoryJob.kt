@@ -20,6 +20,7 @@ import ro.sopa.lastfm.db.repository.UserRepository
 import ro.sopa.lastfm.exception.UserImportException
 import ro.sopa.lastfm.job.JobDescriptor
 import ro.sopa.lastfm.job.JobRegistry
+import ro.sopa.lastfm.service.ArtistService
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -31,6 +32,7 @@ class ListeningHistoryJob(val lastFMClient: LastFMClient,
                           val artistRepository: ArtistRepository,
                           val artistAliasRepository: ArtistAliasRepository,
                           val entityManager: EntityManager,
+                          val artistService: ArtistService,
                           val userRepository: UserRepository,
                           val jobRegistry: JobRegistry
 ) {
@@ -153,7 +155,11 @@ class ListeningHistoryJob(val lastFMClient: LastFMClient,
 
     private fun handleMissingArtist(artist: ro.sopa.lastfm.api.model.correction.Artist): Artist {
         val artistDb = Artist(null, artist.name!!, artist.mbid)
-        return artistRepository.save(artistDb)
+        val savedArtist = artistRepository.save(artistDb)
+
+        artistService.downloadTags(savedArtist);
+
+        return savedArtist;
     }
 
     private fun createArtistAlias(artist: Artist, aliasName: String): Int {
